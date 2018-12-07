@@ -1,0 +1,29 @@
+---
+# tasks file for docker
+- name: Criando Docker - BlueGreen
+  hosts: docker
+  tasks:
+    - name: Python-pip
+      apt:
+        name: python-pip
+        state: present
+        update_cache: yes
+
+    - pip:
+        name: docker-py
+    
+    - name: Blue
+      docker_container:
+        name: blue
+        image: httpd
+        state: started
+        volumes:
+        - /root/blue/:/usr/local/apache2/htdocs/
+
+    - name: Green
+      docker_container:
+        name: green
+        image: httpd
+        state: started
+        volumes:
+        - /root/green/:/usr/local/apache2/htdocs/
