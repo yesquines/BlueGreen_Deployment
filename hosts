@@ -1,0 +1,2 @@
+[docker]
+192.168.99.20 ansible_user=root 
