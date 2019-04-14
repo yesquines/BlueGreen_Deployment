@@ -4,58 +4,58 @@
   hosts: docker
   tasks:
     - name: Verificando Ambiente
-      command: test -f /etc/nginx/sites-enabled/green.conf
+      stat: 
+        path: /etc/nginx/sites-enabled/green.conf
       register: ambiente
-      ignore_errors: True
 
     - name: Copiando o INDEX - Green
       copy:
         src: /var/lib/jenkins/workspace/BlueGreen/index.html
         dest: /root/green/index.html
-      when: ambiente.rc == 1
+      when: ambiente.stat.exists == False
     
     - name: Copiando o INDEX - Blue
       copy:
         src: /var/lib/jenkins/workspace/BlueGreen/index.html
         dest: /root/blue/index.html
-      when: ambiente.rc == 0
+      when: ambiente.stat.exists == True
 
     - name: Pegando o IP do Green
       command: docker exec green hostname -I
       register: ipgreen
-      when: ambiente.rc == 1
+      when: ambiente.stat.exists == False
 
     - name: Pegando o IP do Blue
       command: docker exec blue hostname -I
       register: ipblue
-      when: ambiente.rc == 0
+      when: ambiente.stat.exists == True
 
     - name: Copiando Virtual Host - Green
       template:
         src: /roles/bluegreen/files/green.conf
         dest: /etc/nginx/sites-enabled/green.conf
-      when: ambiente.rc == 1
+      when: ambiente.stat.exists == False
 
     - name: Copiando Virtual Host - Blue
       template:
         src: /roles/bluegreen/files/blue.conf
         dest: /etc/nginx/sites-enabled/blue.conf
-      when: ambiente.rc == 0
+      when: ambiente.stat.exists == True
 
     - name: Remover o Ambiente - Blue
       file:
         path: /etc/nginx/sites-enabled/blue.conf
         state: absent
-      when: ambiente.rc == 1 
+      when: ambiente.stat.exists == False 
 
     - name: Remover o Ambiente - Green
       file:
         path: /etc/nginx/sites-enabled/green.conf
         state: absent
-      when: ambiente.rc == 0
+      when: ambiente.stat.exists == True
 
     - name: Reiniciar o NGINX
-      service:
+      systemd:
         name: nginx
         state: restarted
 
